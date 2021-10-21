@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Custom styling to display the emoji at a large size
 struct emojiSizeStyling: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -14,6 +15,7 @@ struct emojiSizeStyling: ViewModifier {
     }
 }
 
+// Styling for the rock, paper, scissors buttons.
 struct emojiButtonStyling: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -42,25 +44,24 @@ struct ContentView: View {
     @State private var questionCount = 0
     @State private var showingScore = false
 
-
-    
-
-    
     func nextMove() {
         computersMove = Int.random(in: 0 ..< moves.count)
         shouldWin = Bool.random()
     }
     
-    func detirmineWin(computer: Int, player: Int) -> Bool {
+    func detirmineWin(computer: Int, player: Int) {
+        var win: Bool
+        questionCount += 1
         // thing A beats thing B if it’s one place to the right of it, taking into account wrapping around the end of the array.
         switch computer {
         case 0:
-            return player == 1 ? true : false
+            win = player == 1 ? true : false
         case 1:
-            return player == 2 ? true : false
+            win = player == 2 ? true : false
         default: // Also case 2
-            return player == 0 ? true : false
+            win = player == 0 ? true : false
         }
+        updateScore(with: win)
     }
     
     func updateScore(with didWin: Bool) {
@@ -71,53 +72,57 @@ struct ContentView: View {
             // Prevent score dropping below 0
             score -= score > 0 ? 1 : 0
         }
+        
+        // End game when after 10th turn
+        if questionCount < 10 {
+            nextMove()
+        } else {
+            showingScore = true
+        }
+    }
+    
+    func reset() {
+        questionCount = 0
+        score = 0
+        nextMove()
     }
    
     var body: some View {
         NavigationView {
-            
-
-        VStack(spacing: 20) {
-            Text("Score: \(score)")
-                .font(.largeTitle)
-                .foregroundColor(.blue)
-            Text("Computer's Choice")
-                .font(.title)
-            Text(moves[computersMove])
-                .largeEmoji()
-            Text("Can you \(shouldWin ? "win" : " Lose")?")
-                .font(.title)
-
-            HStack {
-                ForEach (0 ..< moves.count) { index in
-                    Button(action: {
-                        questionCount += 1
-                        let win = detirmineWin(computer: computersMove, player: index)
-                        updateScore(with: win)
-                        if questionCount < 10 {
-                            nextMove()
-                        } else {
-                            showingScore = true
-                        }
-                    }, label: {
-                        Text(moves[index])
-                            .emojiButton()
-                            
-                    })
-                }
-            }
-
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle("Rock, Paper, Scissors")
-        .alert(isPresented: $showingScore) {
-            Alert(title: Text("Game Finished"), message: Text("Your score is \(score). \(score > 5 ? "Great Job!" : "Better luck next time.")"), dismissButton: .default(Text("Start Again")) {
-                    questionCount = 0
-                    score = 0
-                    nextMove()
+            VStack(spacing: 20) {
+                Text("Score: \(score)")
+                    .font(.largeTitle)
+                    .foregroundColor(.blue)
                 
-            })
-        }
+                Text("Computer's Choice")
+                    .font(.title)
+                
+                Text(moves[computersMove])
+                    .largeEmoji()
+                
+                Text("Can you \(shouldWin ? "win" : " Lose")?")
+                    .font(.title)
+
+                HStack {
+                    ForEach (0 ..< moves.count) { index in
+                        Button(action: {
+                            detirmineWin(computer: computersMove, player: index)
+                        }, label: {
+                            Text(moves[index])
+                                .emojiButton()
+                                
+                        })
+                    }
+                }
+
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Rock, Paper, Scissors")
+            .alert(isPresented: $showingScore) {
+                Alert(title: Text("Game Finished"), message: Text("Your score is \(score). \(score > 5 ? "Great Job!" : "Better luck next time.")"), dismissButton: .default(Text("Start Again")) {
+                        reset()
+                })
+            }
 
         }
     }
